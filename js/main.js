@@ -1,21 +1,47 @@
+const titleConfirmed = "Confirmed",
+    titleConfirmedNew = "Confirmed, new",
+    titleDeaths = "Deaths",
+    titleDeathsNew = "Deaths, new",
+    titleRationDeathsConfirmed = "Deaths / Confirmed",
+    titleRationNewTotalConfirmed = "New / Total Confirmed",
+    titleRationNewTotalDeaths = "New / Total Deaths";
+
+const allTitles = [titleConfirmed,
+    titleConfirmedNew,
+    titleDeaths,
+    titleDeathsNew,
+    titleRationDeathsConfirmed,
+    titleRationNewTotalConfirmed,
+    titleRationNewTotalDeaths];
+
 (function main() {
-    let region = "European Region",
+    const region = "European Region",
         // country = "Russian Federation";
         country = "Germany";
-    const valuesByType = generateValuesFor(region, country);
-    const plots = generatePlotsBy(valuesByType);
-    draw(plots);
+    const {elementCheckboxes, state} = generateCheckboxes(allTitles, function (title) {
+        onStateChange(region, country, state)
+    });
+
+    elementFilters.appendChild(elementCheckboxes);
+
+    onStateChange(region, country, state);
 }());
 
-function generateValuesFor(region, country) {
+function onStateChange(region, country, stateFilters) {
+    const valuesByType = generateValuesFor(region, country, stateFilters);
+    const plots = generatePlotsBy(valuesByType);
+    draw(plots);
+}
+
+function generateValuesFor(region, country, stateFilters) {
     let valuesByType = {
-        "Confirmed": {},
-        "Confirmed, new": {},
-        "Deaths": {},
-        "Deaths, new": {},
-        "Deaths / Confirmed": {},
-        "New / Total Confirmed": {},
-        "New / Total Deaths": {}
+        [titleConfirmed]: {},
+        [titleConfirmedNew]: {},
+        [titleDeaths]: {},
+        [titleDeathsNew]: {},
+        [titleRationDeathsConfirmed]: {},
+        [titleRationNewTotalConfirmed]: {},
+        [titleRationNewTotalDeaths]: {}
     };
 
     for (let k of Object.keys(data)) {
@@ -34,13 +60,27 @@ function generateValuesFor(region, country) {
         const newToConfirmedRatio = ratio(confirmedNew, confirmed);
         const newToTotalDeathsRatio = ratio(deathsNew, deaths);
 
-        valuesByType["Confirmed"][date] = confirmed;
-        valuesByType["Confirmed, new"][date] = confirmedNew;
-        valuesByType["Deaths"][date] = deaths;
-        valuesByType["Deaths, new"][date] = deathsNew;
-        valuesByType["Deaths / Confirmed"][date] = deathsToConfirmedRatio;
-        valuesByType["New / Total Confirmed"][date] = newToConfirmedRatio;
-        valuesByType["New / Total Deaths"][date] = newToTotalDeathsRatio;
+        if (stateFilters[titleConfirmed]) {
+            valuesByType[titleConfirmed][date] = confirmed;
+        }
+        if (stateFilters[titleConfirmedNew]) {
+            valuesByType[titleConfirmedNew][date] = confirmedNew;
+        }
+        if (stateFilters[titleDeaths]) {
+            valuesByType[titleDeaths][date] = deaths;
+        }
+        if (stateFilters[titleDeathsNew]) {
+            valuesByType[titleDeathsNew][date] = deathsNew;
+        }
+        if (stateFilters[titleRationDeathsConfirmed]) {
+            valuesByType[titleRationDeathsConfirmed][date] = deathsToConfirmedRatio;
+        }
+        if (stateFilters[titleRationNewTotalConfirmed]) {
+            valuesByType[titleRationNewTotalConfirmed][date] = newToConfirmedRatio;
+        }
+        if (stateFilters[titleRationNewTotalDeaths]) {
+            valuesByType[titleRationNewTotalDeaths][date] = newToTotalDeathsRatio;
+        }
     }
 
     return valuesByType;
@@ -79,7 +119,30 @@ function generatePlotsBy(valuesByType) {
 }
 
 function draw(plots) {
-    Plotly.newPlot(plot, plots, {
+    Plotly.newPlot(elementPlot, plots, {
         margin: {t: 0}
     });
+}
+
+function generateCheckboxes(allTitles, cb) {
+    const parentElem = document.createElement("div");
+    const state = {};
+    for (let title of allTitles) {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = true;
+        state[title] = true;
+        checkbox.addEventListener("change", function () {
+            state[title] = checkbox.checked;
+            console.log(title);
+            cb(title);
+        });
+        const label = document.createElement('label');
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(" " + title));
+        parentElem.appendChild(label);
+        parentElem.appendChild(document.createElement("br"));
+    }
+
+    return {elementCheckboxes: parentElem, state: state};
 }
