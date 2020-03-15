@@ -18,22 +18,30 @@ const allTitles = [titleConfirmed,
     const region = "European Region",
         // country = "Russian Federation";
         country = "Germany";
-    const {elementCheckboxes, state} = generateCheckboxes(allTitles, function (title) {
-        onStateChange(region, country, state)
+    const {elementCheckboxes, state: stateFilters} = generateCheckboxes(allTitles, function (title) {
+        onStateChange(region, country, stateFilters, stateLocations);
+    });
+    const {elementLocations, state: stateLocations} = generateLocationSelectors(data, function (title) {
+        onStateChange(region, country, stateFilters, stateLocations);
+        elementFilters2.innerHTML = "";
+        elementFilters2.appendChild(elementLocations);
     });
 
     elementFilters.appendChild(elementCheckboxes);
+    elementFilters2.appendChild(elementLocations);
 
-    onStateChange(region, country, state);
+    onStateChange(region, country, stateFilters, stateLocations);
 }());
 
-function onStateChange(region, country, stateFilters) {
-    const valuesByType = generateValuesFor(region, country, stateFilters);
+function onStateChange(region, country, stateFilters, stateLocations) {
+    const valuesByType = generateValuesFor(stateLocations, stateFilters);
     const plots = generatePlotsBy(valuesByType);
     draw(plots);
 }
 
-function generateValuesFor(region, country, stateFilters) {
+function generateValuesFor(stateLocations, stateFilters) {
+    const {region, country} = stateLocations;
+
     let valuesByType = {
         [titleConfirmed]: {},
         [titleConfirmedNew]: {},
@@ -145,4 +153,89 @@ function generateCheckboxes(allTitles, cb) {
     }
 
     return {elementCheckboxes: parentElem, state: state};
+}
+
+function generateLocationSelectors(data, cb) {
+    const parentElem = document.createElement("div");
+    const state = {
+        region: "",
+        country: ""
+    };
+    const countriesByRegion = {};
+
+    let dataAsArray = Object.values(data);
+    if (!dataAsArray.length) {
+        return {elementLocations: parentElem, state: state};
+    }
+
+    let regionSet = false;
+    // TODO last date can have less data than the dates before
+    const regionsData = dataAsArray[0].regions || {},
+        regions = [];
+    for (let region of Object.keys(regionsData)) {
+        if (!regionSet) {
+            state.region = region;
+            regionSet = true;
+        }
+        regions.push(region);
+        for (let country of Object.keys(regionsData[region])) {
+            if (!countriesByRegion[region]) {
+                countriesByRegion[region] = [];
+            }
+            countriesByRegion[region].push(country);
+        }
+    }
+
+    const selectorRegions = document.createElement("select");
+    for (let region of regions) {
+        const optionRegion = document.createElement("option");
+        optionRegion.value = region;
+        optionRegion.text = region;
+        if (state.region === region) {
+            optionRegion.selected = true;
+        }
+        selectorRegions.appendChild(optionRegion);
+    }
+    selectorRegions.addEventListener("change", function () {
+        state.region = selectorRegions.value;
+
+        const selectorCountries = generateCountrySelector(state.region);
+        parentElem.innerHTML = "";
+        parentElem.appendChild(selectorRegions);
+        parentElem.appendChild(selectorCountries);
+        cb(state.region, state.country, parentElem);
+    });
+
+    function generateCountrySelector(region) {
+        const countries = countriesByRegion[region] || [];
+        let countrySet = false;
+
+        const selectorCountries = document.createElement("select");
+        for (let country of countries) {
+            if (!countrySet) {
+                state.country = country;
+                countrySet = true;
+            }
+
+            const optionCountry = document.createElement("option");
+            optionCountry.value = country;
+            optionCountry.text = country;
+            if (state.country === country) {
+                optionCountry.selected = true;
+            }
+            selectorCountries.appendChild(optionCountry);
+        }
+
+        selectorCountries.addEventListener("change", function () {
+            state.country = selectorCountries.value;
+            cb(state.region, state.country, parentElem);
+        });
+
+        return selectorCountries;
+    }
+
+    parentElem.appendChild(selectorRegions);
+    parentElem.appendChild(generateCountrySelector(state.region));
+
+    return {elementLocations: parentElem, state: state};
 }
