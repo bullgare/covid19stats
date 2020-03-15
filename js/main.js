@@ -2,9 +2,9 @@ const titleConfirmed = "Confirmed",
     titleConfirmedNew = "Confirmed, new",
     titleDeaths = "Deaths",
     titleDeathsNew = "Deaths, new",
-    titleRationDeathsConfirmed = "Deaths / Confirmed",
-    titleRationNewTotalConfirmed = "New / Total Confirmed",
-    titleRationNewTotalDeaths = "New / Total Deaths";
+    titleRationDeathsConfirmed = "Deaths / Confirmed, %",
+    titleRationNewTotalConfirmed = "New / Total Confirmed, %",
+    titleRationNewTotalDeaths = "New / Total Deaths, %";
 
 const allTitles = [titleConfirmed,
     titleConfirmedNew,
